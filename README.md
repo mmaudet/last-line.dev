@@ -2,6 +2,8 @@
 
 A personal return of experience on context engineering and AI-assisted development, presented as an interactive slide deck.
 
+![last-line.dev demo](assets/demo.gif)
+
 ## What is this?
 
 In December 2025, I wrote my last line of code by hand. This site tells that story — how a CEO of a 200-person company became a developer again using coding agents and context engineering.
