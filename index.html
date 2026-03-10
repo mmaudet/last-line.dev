@@ -211,7 +211,94 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 @keyframes gb{0%,88%,100%{transform:none;opacity:0;}90%{transform:translateX(-3px);opacity:.6;}92%{transform:translateX(2px);opacity:.6;}94%{opacity:0;}}
 @keyframes ga{0%,89%,100%{transform:none;opacity:0;}91%{transform:translateX(3px);opacity:.5;}93%{transform:translateX(-2px);opacity:.5;}95%{opacity:0;}}
 
-@media(max-width:700px){.projects-grid,.two-col{grid-template-columns:1fr;}.metrics-row{flex-direction:column;}.tl-track{flex-direction:column;}.tl-track::before{display:none;}.h-giant{font-size:2rem;}.h-large{font-size:1.5rem;}}
+@media(max-width:700px){
+  /* Allow scrolling on content-heavy slides */
+  .slide{padding:3vh 5vw 8vh;justify-content:flex-start;padding-top:6vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .slide.active{overflow-y:auto;}
+
+  /* Typography */
+  .h-giant{font-size:clamp(1.6rem,8vw,2.4rem);}
+  .h-large{font-size:clamp(1.2rem,5.5vw,1.7rem);}
+  .body-text{font-size:clamp(.82rem,3.5vw,.95rem);line-height:1.65;}
+  .prompt{font-size:10px;margin-bottom:10px;}
+
+  /* Toolbar */
+  #toolbar{top:10px;right:10px;gap:5px;}
+  .tb-btn{font-size:10px;padding:5px 9px;}
+
+  /* Nav */
+  #nav-hint{display:none;}
+  #slide-counter{bottom:10px;right:12px;font-size:10px;}
+
+  /* Grids → single column */
+  .projects-grid,.two-col{grid-template-columns:1fr;}
+  .metrics-row{flex-direction:column;gap:10px;}
+
+  /* Project cards */
+  .project-card{padding:14px;}
+  .project-desc{font-size:11px;}
+  .project-name{font-size:13px;}
+
+  /* Metric cards */
+  .metric-card{padding:14px 16px;}
+  .metric-num{font-size:clamp(1.2rem,5vw,1.6rem)!important;}
+  .metric-label{font-size:10px;}
+
+  /* Timeline → vertical */
+  .tl-track{flex-direction:column;gap:10px;}
+  .tl-track::before{display:none;}
+  .tl-step{flex-direction:row;align-items:center;gap:10px;}
+  .tl-dot{margin-bottom:0;flex-shrink:0;}
+  .tl-label{text-align:left;margin-bottom:0;min-width:55px;}
+  .tl-card{width:auto;flex:1;text-align:left;padding:8px 12px;font-size:10px;}
+
+  /* Phase detail */
+  #phase-detail{padding:14px 16px;}
+  #phase-detail .pd-title{font-size:13px;flex-wrap:wrap;}
+  #phase-detail .pd-body{font-size:11px;line-height:1.65;}
+  #phase-detail.major{padding:16px 18px;}
+  #phase-detail.major .pd-title{font-size:14px;}
+  #phase-detail.major .pd-body{font-size:12px;}
+
+  /* Heatmap — scale cells to fit */
+  .hm-cell{width:calc((100vw - 10vw - 55 * 2px) / 56);height:calc((100vw - 10vw - 55 * 2px) / 56);min-width:4px;min-height:4px;}
+  .hm-row{gap:2px;}
+  .hm-grid{gap:2px;}
+  .hm-ann{font-size:10px;gap:6px;}
+  .hm-marker{width:10px;height:10px;}
+
+  /* Terminal */
+  .terminal{font-size:11px;margin-top:12px;}
+  .t-body{padding:10px 12px;}
+  .t-out{padding-left:12px;font-size:10px;}
+
+  /* Tables */
+  .data-table{font-size:10px;display:block;overflow-x:auto;}
+  .data-table th{padding:6px 8px;font-size:8px;}
+  .data-table td{padding:8px;font-size:10px;}
+
+  /* Questions */
+  .question-item{font-size:12px;padding:12px 0;gap:10px;}
+  .q-mark{font-size:15px;}
+
+  /* CTA */
+  .cta-box{padding:18px 16px;margin-top:14px;}
+  .cta-text{font-size:clamp(.85rem,3.5vw,1rem);}
+  .cta-contact{font-size:11px;}
+
+  /* Columns in col-card */
+  .col-item{font-size:11px;}
+  .col-title{font-size:12px;}
+
+  /* Glossary slide — single col inner too */
+  #s12 .two-col>div{gap:8px;}
+  #s12 .col-card{padding:12px!important;}
+  #s12 .col-title{font-size:11px!important;}
+  #s12 .col-card>div:last-child{font-size:10px!important;}
+
+  /* Separator */
+  .sep{margin:10px 0;}
+}
 </style>
 </head>
 <body class="light">
@@ -706,7 +793,7 @@ document.addEventListener('keydown',e=>{
 let tx=0;
 document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
 document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)goTo(cur+(d>0?1:-1));});
-document.addEventListener('click',e=>{if(e.target.closest('a,.tb-btn,.tl-step,#phase-detail')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
+document.addEventListener('click',e=>{if(window.innerWidth<=700) return;if(e.target.closest('a,.tb-btn,.tl-step,#phase-detail')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
 
 function toggleTheme(){
   theme=theme==='light'?'dark':'light';
