@@ -107,19 +107,20 @@ body.dark .metric-card::before{box-shadow:0 0 8px var(--green);}
 /* TIMELINE (slide 5) */
 .timeline-wrap{width:100%;position:relative;margin-top:20px;margin-bottom:8px;}
 .tl-track{display:flex;align-items:flex-start;gap:0;position:relative;width:100%;}
-.tl-track::before{content:'';position:absolute;top:7px;left:calc(12.5%);right:calc(12.5%);height:2px;background:linear-gradient(90deg,var(--border2) 0%,var(--green) 100%);z-index:0;}
+.tl-track::before{content:'';position:absolute;top:7px;left:calc(12.5%);right:calc(12.5%);height:2px;background:linear-gradient(90deg,var(--border2) 0%,var(--border2) 60%,var(--green) 100%);z-index:0;}
 .tl-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;}
 .tl-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--bg);z-index:2;transition:all .3s;margin-bottom:10px;}
 .tl-step.done .tl-dot{border-color:var(--green);background:var(--green);}
 body.dark .tl-step.done .tl-dot{box-shadow:0 0 7px var(--green);}
-.tl-step.current .tl-dot{border-color:var(--green);background:var(--bg);animation:pdot 2s ease infinite;}
+.tl-step.current .tl-dot{border-color:var(--green);background:var(--green);}
+body.dark .tl-step.current .tl-dot{box-shadow:0 0 7px var(--green);}
 .tl-step:hover .tl-dot{transform:scale(1.25);}
 @keyframes pdot{0%,100%{box-shadow:0 0 0 0 var(--green-dim);}50%{box-shadow:0 0 0 6px transparent;}}
 .tl-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:center;line-height:1.4;margin-bottom:8px;}
 .tl-step.done .tl-label,.tl-step:hover .tl-label{color:var(--text-dim);}
-.tl-step.current .tl-label,.tl-step.sel .tl-label{color:var(--green);font-weight:700;}
+.tl-step.sel .tl-label{color:var(--green);font-weight:700;}
 .tl-card{background:var(--surface);border:1px solid var(--border2);padding:11px 13px;font-size:11px;color:var(--text-dim);line-height:1.55;text-align:center;box-shadow:var(--shadow);width:90%;transition:all .2s;}
-.tl-step.current .tl-card,.tl-step.sel .tl-card{border-color:var(--green);color:var(--text);background:var(--green-dim);}
+.tl-step.sel .tl-card{border-color:var(--green);color:var(--text);background:var(--green-dim);}
 .tl-step:hover .tl-card{border-color:var(--green);}
 
 /* Phase detail panel */
@@ -421,17 +422,17 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 
   <div class="timeline-wrap ai">
     <div class="tl-track">
-      <div class="tl-step done" onclick="showPhaseDetail(0)">
+      <div class="tl-step" onclick="showPhaseDetail(0)">
         <div class="tl-dot"></div>
         <div class="tl-label" data-t='{"en":"Phase 1","fr":"Phase 1"}'>Phase 1</div>
         <div class="tl-card" data-t='{"en":"Editor generation<br><span style=\"color:var(--text-muted)\">Copilot · Cursor</span>","fr":"Génération éditeur<br><span style=\"color:var(--text-muted)\">Copilot · Cursor</span>"}'>Editor generation<br><span style="color:var(--text-muted)">Copilot · Cursor</span></div>
       </div>
-      <div class="tl-step done" onclick="showPhaseDetail(1)">
+      <div class="tl-step" onclick="showPhaseDetail(1)">
         <div class="tl-dot"></div>
         <div class="tl-label" data-t='{"en":"Phase 2","fr":"Phase 2"}'>Phase 2</div>
         <div class="tl-card" data-t='{"en":"Vibe coding<br><span style=\"color:var(--text-muted)\">Chat-based</span>","fr":"Vibe coding<br><span style=\"color:var(--text-muted)\">Par chat</span>"}'>Vibe coding<br><span style="color:var(--text-muted)">Chat-based</span></div>
       </div>
-      <div class="tl-step done" onclick="showPhaseDetail(2)">
+      <div class="tl-step" onclick="showPhaseDetail(2)">
         <div class="tl-dot"></div>
         <div class="tl-label" data-t='{"en":"Phase 3","fr":"Phase 3"}'>Phase 3</div>
         <div class="tl-card" data-t='{"en":"Coding agent<br><span style=\"color:var(--text-muted)\">Claude Code</span>","fr":"Agent de coding<br><span style=\"color:var(--text-muted)\">Claude Code</span>"}'>Coding agent<br><span style="color:var(--text-muted)">Claude Code</span></div>
@@ -760,7 +761,7 @@ const phaseDetails = {
 function showPhaseDetail(idx) {
   activePh = idx;
   document.querySelectorAll('.tl-step').forEach((s, i) => {
-    s.classList.toggle('sel', i === idx && !s.classList.contains('current'));
+    s.classList.toggle('sel', i === idx);
   });
   const d = phaseDetails[lang][idx];
   const el = document.getElementById('phase-detail');
