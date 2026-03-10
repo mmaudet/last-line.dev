@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>last-line.dev</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,200;0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--transition:0.35s ease;}
+
+body.light{
+  --bg:#f5f4f0;--bg2:#eeecea;--bg3:#e5e3de;--surface:#ffffff;
+  --border:#d5d2cc;--border2:#bbb8b0;
+  --green:#007a3d;--green-dim:rgba(0,122,61,0.07);
+  --amber:#b85c00;--red:#cc2222;
+  --text:#111110;--text-dim:#5a5850;--text-muted:#aaa49a;
+  --prompt-text:#00aa55;--shadow:0 2px 12px rgba(0,0,0,0.07);
+}
+body.dark{
+  --bg:#0a0a0a;--bg2:#0f0f0f;--bg3:#141414;--surface:#111;
+  --border:#1e1e1e;--border2:#2a2a2a;
+  --green:#00ff88;--green-dim:rgba(0,255,136,0.1);
+  --amber:#ffb800;--red:#ff4444;
+  --text:#e8e8e8;--text-dim:#777;--text-muted:#3a3a3a;
+  --prompt-text:#00ff88;--shadow:none;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;transition:background var(--transition),color var(--transition);}
+
+body.dark #scanlines{opacity:1;}body.light #scanlines{opacity:0;}
+#scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);pointer-events:none;z-index:100;transition:opacity var(--transition);}
+
+/* TOOLBAR */
+#toolbar{position:fixed;top:18px;right:22px;display:flex;gap:8px;z-index:500;}
+.tb-btn{border:1px solid var(--border2);background:var(--surface);color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;padding:7px 13px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);}
+.tb-btn:hover{color:var(--green);border-color:var(--green);}
+
+/* SLIDES */
+#presentation{width:100vw;height:100vh;position:relative;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:4vh 6vw 6vh;opacity:0;pointer-events:none;transition:opacity .4s ease;overflow:hidden;}
+.slide.active{opacity:1;pointer-events:all;}
+
+/* PROGRESS */
+#progress-bar{position:fixed;bottom:0;left:0;height:2px;background:var(--green);transition:width .5s ease;z-index:200;}
+body.dark #progress-bar{box-shadow:0 0 6px var(--green);}
+#slide-counter{position:fixed;bottom:18px;right:22px;font-size:11px;color:var(--text-muted);letter-spacing:.1em;z-index:200;}
+#slide-counter em{color:var(--green);font-style:normal;}
+#nav-hint{position:fixed;bottom:18px;left:22px;font-size:11px;color:var(--text-muted);z-index:200;}
+.key{display:inline-block;border:1px solid var(--border2);padding:1px 6px;font-size:10px;color:var(--text-dim);background:var(--surface);border-radius:2px;}
+
+/* TYPOGRAPHY */
+.prompt{font-size:12px;color:var(--text-muted);letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.prompt::before{content:'$';color:var(--green);font-weight:700;}
+.h-giant{font-size:clamp(2.6rem,6vw,5.5rem);font-weight:700;line-height:1.04;letter-spacing:-.03em;margin-bottom:.18em;}
+.h-large{font-size:clamp(1.8rem,3.4vw,3.2rem);font-weight:700;line-height:1.1;letter-spacing:-.025em;margin-bottom:.3em;}
+.accent{color:var(--green);}.dim{color:var(--text-dim);}.amber-c{color:var(--amber);}.strike{text-decoration:line-through;color:var(--text-muted);}
+.body-text{font-size:clamp(.9rem,1.4vw,1.1rem);color:var(--text-dim);line-height:1.78;max-width:72ch;}
+.body-text .hl{color:var(--text);font-weight:700;}.body-text .gr{color:var(--green);}
+.sep{width:40px;height:2px;background:var(--green);margin:14px 0;}
+body.dark .sep{box-shadow:0 0 6px var(--green);}
+
+/* TERMINAL */
+.terminal{background:#111;border:1px solid var(--border2);font-size:13px;line-height:1.9;position:relative;overflow:hidden;box-shadow:var(--shadow);margin-top:18px;}
+body.light .terminal{background:#1a1a18;border-color:#444;}
+.t-head{background:#222;padding:8px 14px;display:flex;align-items:center;gap:7px;}
+.dot{width:11px;height:11px;border-radius:50%;}
+.dot.r{background:#ff5f57;}.dot.y{background:#febc2e;}.dot.g{background:#28c840;}
+.t-body{padding:14px 18px;}
+.t-cmd{color:var(--prompt-text);}
+.t-out{color:#999;padding-left:20px;display:block;}
+.t-comment{color:#444;font-style:italic;display:block;}
+.t-hi{color:var(--amber);}.t-acc{color:var(--prompt-text);}
+.t-line{display:flex;gap:10px;}
+
+/* METRICS */
+.metrics-row{display:flex;gap:14px;margin-top:20px;width:100%;}
+.metric-card{border:1px solid var(--border2);padding:20px 24px;flex:1;background:var(--surface);position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
+body.dark .metric-card::before{box-shadow:0 0 8px var(--green);}
+.metric-num{font-size:clamp(1.6rem,3vw,2.6rem);font-weight:700;color:var(--green);line-height:1;margin-bottom:8px;}
+.metric-label{font-size:12px;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;line-height:1.5;}
+
+/* PROJECT CARDS */
+.projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;width:100%;}
+.project-card{border:1px solid var(--border2);padding:20px;background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;}
+.project-name{font-size:15px;font-weight:700;color:var(--green);margin-bottom:5px;}
+.project-stack{font-size:10px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.project-desc{font-size:12px;color:var(--text-dim);line-height:1.68;flex:1;}
+.project-link{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:11px;color:var(--text-muted);text-decoration:none;letter-spacing:.04em;border-top:1px solid var(--border);padding-top:9px;}
+.project-link:hover{color:var(--green);}
+.project-badge{display:inline-block;margin-top:8px;font-size:10px;padding:3px 8px;border:1px solid var(--border2);color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;}
+
+/* PHASES (slide 4) */
+.phases-full{display:flex;flex-direction:column;gap:10px;width:100%;}
+.phase{display:grid;grid-template-columns:28px 1fr;gap:14px;align-items:start;padding:13px 16px;border-left:2px solid var(--border2);background:var(--surface);box-shadow:var(--shadow);transition:border-color .3s,background .3s;}
+.phase.active-phase{border-left-color:var(--green);background:var(--green-dim);}
+.phase-num{color:var(--text-muted);font-size:11px;padding-top:2px;font-weight:700;}
+.phase.active-phase .phase-num{color:var(--green);}
+.phase-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.phase.active-phase .phase-title{color:var(--green);}
+.phase-desc{font-size:12px;color:var(--text-dim);line-height:1.62;}
+.phase-tag{display:inline-block;font-size:9px;padding:1px 7px;border:1px solid var(--border2);color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
+.phase.active-phase .phase-tag{border-color:var(--green);color:var(--green);}
+
+/* TIMELINE (slide 5) */
+.timeline-wrap{width:100%;position:relative;margin-top:20px;margin-bottom:8px;}
+.tl-track{display:flex;align-items:flex-start;gap:0;position:relative;width:100%;}
+.tl-track::before{content:'';position:absolute;top:7px;left:calc(12.5%);right:calc(12.5%);height:2px;background:linear-gradient(90deg,var(--border2) 0%,var(--green) 100%);z-index:0;}
+.tl-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:pointer;}
+.tl-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--bg);z-index:2;transition:all .3s;margin-bottom:10px;}
+.tl-step.done .tl-dot{border-color:var(--green);background:var(--green);}
+body.dark .tl-step.done .tl-dot{box-shadow:0 0 7px var(--green);}
+.tl-step.current .tl-dot{border-color:var(--green);background:var(--bg);animation:pdot 2s ease infinite;}
+.tl-step:hover .tl-dot{transform:scale(1.25);}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 0 var(--green-dim);}50%{box-shadow:0 0 0 6px transparent;}}
+.tl-label{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);text-align:center;line-height:1.4;margin-bottom:8px;}
+.tl-step.done .tl-label,.tl-step:hover .tl-label{color:var(--text-dim);}
+.tl-step.current .tl-label,.tl-step.sel .tl-label{color:var(--green);font-weight:700;}
+.tl-card{background:var(--surface);border:1px solid var(--border2);padding:11px 13px;font-size:11px;color:var(--text-dim);line-height:1.55;text-align:center;box-shadow:var(--shadow);width:90%;transition:all .2s;}
+.tl-step.current .tl-card,.tl-step.sel .tl-card{border-color:var(--green);color:var(--text);background:var(--green-dim);}
+.tl-step:hover .tl-card{border-color:var(--green);}
+
+/* Phase detail panel */
+#phase-detail{margin-top:16px;padding:18px 22px;border:1px solid var(--border2);border-left:3px solid var(--border2);background:var(--surface);display:none;box-shadow:var(--shadow);}
+#phase-detail.visible{display:block;}
+#phase-detail .pd-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+#phase-detail .pd-tag{font-size:9px;padding:2px 8px;border:1px solid var(--border2);color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;}
+#phase-detail .pd-body{font-size:12px;color:var(--text-dim);line-height:1.75;max-width:86ch;}
+#phase-detail .pd-body strong{color:var(--text);}
+#phase-detail.major{border-color:var(--green);border-left-width:4px;background:var(--green-dim);padding:22px 26px;}
+#phase-detail.major .pd-title{color:var(--green);font-size:17px;}
+#phase-detail.major .pd-tag{border-color:var(--green);color:var(--green);}
+#phase-detail.major .pd-body{font-size:13px;color:var(--text);}
+#phase-detail.major .pd-body strong{color:var(--green);}
+body.dark #phase-detail.major{box-shadow:0 0 14px rgba(0,255,136,.1);}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;width:100%;}
+.col-card{border:1px solid var(--border2);padding:20px;background:var(--surface);box-shadow:var(--shadow);}
+.col-title{font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700;}
+.col-title::before{content:'●';font-size:9px;}
+.col-card.sovereign .col-title{color:var(--green);}.col-card.sovereign .col-title::before{color:var(--green);}
+.col-card.cloud .col-title{color:var(--amber);}.col-card.cloud .col-title::before{color:var(--amber);}
+.col-item{font-size:12px;color:var(--text-dim);padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+.col-item:last-child{border-bottom:none;}
+.col-item::before{content:'→';color:var(--text-muted);font-size:10px;flex-shrink:0;margin-top:2px;}
+.col-card.sovereign .col-item.hi{color:var(--green);}.col-card.cloud .col-item.hi{color:var(--amber);}
+.col-item.neg{color:var(--red)!important;}
+
+/* TABLE */
+.data-table{width:100%;margin-top:16px;border-collapse:collapse;font-size:13px;box-shadow:var(--shadow);}
+.data-table th{background:var(--bg3);color:var(--text-dim);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:9px 16px;text-align:left;border-bottom:1px solid var(--border2);font-weight:700;}
+.data-table td{padding:11px 16px;border-bottom:1px solid var(--border);color:var(--text-dim);background:var(--surface);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table td.hi{color:var(--green);font-weight:700;}.data-table td.am{color:var(--amber);font-weight:700;}.data-table td.mu{color:var(--text-muted);}
+.data-table tr:hover td{background:var(--green-dim);}
+
+/* QUESTIONS */
+.questions-list{display:flex;flex-direction:column;gap:0;margin-top:18px;width:100%;}
+.question-item{display:grid;grid-template-columns:26px 1fr;gap:14px;font-size:14px;line-height:1.75;color:var(--text-dim);padding:16px 0;border-bottom:1px solid var(--border);}
+.question-item:last-child{border-bottom:none;}
+.q-mark{color:var(--amber);font-weight:700;font-size:18px;}
+.question-item strong{color:var(--text);}
+
+/* CTA */
+.cta-box{border:1px solid var(--green);padding:30px 36px;margin-top:22px;max-width:780px;position:relative;background:var(--green-dim);box-shadow:var(--shadow);}
+.cta-box::before{content:attr(data-label);position:absolute;top:-9px;left:20px;background:var(--bg);padding:0 10px;font-size:10px;letter-spacing:.14em;color:var(--green);font-weight:700;}
+.cta-text{font-size:clamp(.95rem,1.5vw,1.15rem);line-height:1.8;color:var(--text);margin-bottom:18px;}
+.cta-text strong{color:var(--green);}
+.cta-contact{font-size:13px;color:var(--text-dim);display:flex;flex-direction:column;gap:5px;}
+.cta-contact a{color:var(--green);text-decoration:none;}.cta-contact a:hover{text-decoration:underline;}
+
+/* HEATMAP */
+.heatmap-wrap{margin-top:20px;}
+.hm-grid{display:flex;flex-direction:column;gap:3px;}
+.hm-row{display:flex;gap:3px;}
+.hm-cell{width:14px;height:14px;border-radius:2px;background:var(--border);}
+body.light .hm-cell{background:#dedad4;}
+body.light .hm-cell.l1{background:#b6e0c6;}body.light .hm-cell.l2{background:#6dc48a;}body.light .hm-cell.l3{background:#2fa05a;}body.light .hm-cell.l4{background:#007a3d;}
+body.dark .hm-cell.l1{background:#163d22;}body.dark .hm-cell.l2{background:#226838;}body.dark .hm-cell.l3{background:#2f9150;}body.dark .hm-cell.l4{background:var(--green);}
+body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
+.hm-ann{font-size:12px;color:var(--text-dim);margin-top:12px;display:flex;align-items:center;gap:10px;}
+.hm-marker{width:14px;height:14px;background:var(--green);border-radius:2px;flex-shrink:0;}
+
+/* ANIMATIONS */
+.slide.active .ai{animation:fadeUp .44s ease forwards;opacity:0;}
+.slide.active .ai:nth-child(1){animation-delay:.04s;}
+.slide.active .ai:nth-child(2){animation-delay:.12s;}
+.slide.active .ai:nth-child(3){animation-delay:.21s;}
+.slide.active .ai:nth-child(4){animation-delay:.30s;}
+.slide.active .ai:nth-child(5){animation-delay:.39s;}
+.slide.active .ai:nth-child(6){animation-delay:.48s;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* dissolve */
+.dw{position:relative;display:inline-block;min-width:8ch;}
+.da{animation:da 3.2s ease infinite;}
+.db{animation:db 3.2s ease infinite;position:absolute;left:0;}
+@keyframes da{0%,38%{opacity:1;}50%,100%{opacity:0;}}
+@keyframes db{0%,38%{opacity:0;}50%,100%{opacity:1;}}
+
+.blink{animation:blink 1s step-end infinite;color:var(--green);}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.glitch{position:relative;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;pointer-events:none;}
+.glitch::before{color:#ff0044;animation:gb 5s infinite;clip-path:polygon(0 25%,100% 25%,100% 45%,0 45%);}
+.glitch::after{color:#0088ff;animation:ga 5s infinite;clip-path:polygon(0 60%,100% 60%,100% 78%,0 78%);}
+@keyframes gb{0%,88%,100%{transform:none;opacity:0;}90%{transform:translateX(-3px);opacity:.6;}92%{transform:translateX(2px);opacity:.6;}94%{opacity:0;}}
+@keyframes ga{0%,89%,100%{transform:none;opacity:0;}91%{transform:translateX(3px);opacity:.5;}93%{transform:translateX(-2px);opacity:.5;}95%{opacity:0;}}
+
+@media(max-width:700px){.projects-grid,.two-col{grid-template-columns:1fr;}.metrics-row{flex-direction:column;}.tl-track{flex-direction:column;}.tl-track::before{display:none;}.h-giant{font-size:2rem;}.h-large{font-size:1.5rem;}}
+</style>
+</head>
+<body class="light">
+<div id="scanlines"></div>
+<div id="toolbar">
+  <button class="tb-btn" id="lang-btn" onclick="toggleLang()">🌐 FR</button>
+  <button class="tb-btn" id="theme-btn" onclick="toggleTheme()">◐ Dark</button>
+</div>
+
+<div id="presentation">
+
+<!-- 0 · TITLE -->
+<div class="slide active" id="s0">
+  <div class="ai" style="font-size:12px;color:var(--text-muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:28px"
+    data-t='{"en":"last-line.dev /// michel-marie maudet · linagora","fr":"last-line.dev /// michel-marie maudet · linagora"}'>last-line.dev /// michel-marie maudet · linagora</div>
+  <div class="ai">
+    <div class="h-giant glitch" data-text="I wrote my last" data-tg='{"en":"I wrote my last","fr":"J&apos;ai écrit ma dernière"}'
+      data-t='{"en":"I wrote my last","fr":"J&apos;ai écrit ma dernière"}'>I wrote my last</div>
+    <div class="h-giant"><span class="accent" data-t='{"en":"line of code","fr":"ligne de code"}'>line of code</span></div>
+    <div class="h-giant"><span class="dim" data-t='{"en":"in December","fr":"en décembre"}'>in December</span> 2025<span class="blink">_</span></div>
+  </div>
+  <div class="sep ai"></div>
+  <div class="body-text ai"
+    data-t='{"en":"How I <span class=\"hl\">became a developer again</span> while remaining CEO of a 200-person company.<br>A personal feedback. No filter.","fr":"Comment je suis <span class=\"hl\">redevenu développeur</span> en restant DG d&apos;une boîte de 200 personnes.<br>Un retour d&apos;expérience personnel. Sans filtre."}'>
+    How I <span class="hl">became a developer again</span> while remaining CEO of a 200-person company.<br>A personal feedback. No filter.</div>
+  <div class="ai" style="margin-top:24px;font-size:13px;color:var(--text-muted);line-height:2">
+    <div data-t='{"en":"Directeur Général · LINAGORA · Open Source AI","fr":"Directeur Général · LINAGORA · IA Open Source"}'>Directeur Général · LINAGORA · Open Source AI</div>
+    <div><a href="mailto:mmaudet@linagora.com" style="color:var(--green);text-decoration:none">mmaudet@linagora.com</a></div>
+  </div>
+</div>
+
+<!-- 1 · HEATMAP -->
+<div class="slide" id="s1">
+  <div class="prompt ai" data-t='{"en":"git log --author=mmaudet --stat","fr":"git log --author=mmaudet --stat"}'>git log --author=mmaudet --stat</div>
+  <div class="h-large ai"><a href="https://www.github.com/mmaudet" target="_blank" style="color:inherit;text-decoration:none">github.com/<span class="accent">mmaudet</span></a></div>
+  <div class="body-text ai" data-t='{"en":"One year. One inflection point. No retouching.","fr":"Un an. Un point d&apos;inflexion. Sans retouche."}'>One year. One inflection point. No retouching.</div>
+  <div class="heatmap-wrap ai" id="hm"></div>
+  <div class="body-text ai" style="margin-top:18px"
+    data-t='{"en":"I run a 200-person company. No official dev time allocated.<br><span class=\"hl\">Yet here is what happened after November 2025.</span>","fr":"Je dirige une boîte de 200 personnes. Aucun temps dev officiel alloué.<br><span class=\"hl\">Voici pourtant ce qui s&apos;est passé après novembre 2025.</span>"}'>
+    I run a 200-person company. No official dev time allocated.<br><span class="hl">Yet here is what happened after November 2025.</span></div>
+</div>
+
+<!-- 2 · INFLECTION POINT -->
+<div class="slide" id="s2">
+  <div class="prompt ai">git tag -a v0.0 -m "before"</div>
+  <div class="h-large ai">
+    <span data-t='{"en":"November 2025.","fr":"Novembre 2025."}'>November 2025.</span><span class="accent"> Claude Code.</span><br>
+    <span class="dim" style="font-size:.58em;font-weight:400" data-t='{"en":"Something unlocks.","fr":"Quelque chose se déverrouille."}'>Something unlocks.</span>
+  </div>
+  <div class="terminal ai" style="max-width:780px">
+    <div class="t-head"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+    <div class="t-body">
+      <div class="t-line"><span class="t-cmd">$</span><span style="color:#ccc"> claude "build me an OVH cost dashboard"</span></div>
+      <span class="t-out">● Reading project structure...</span>
+      <span class="t-out">● Writing <span class="t-acc">src/components/CostChart.tsx</span></span>
+      <span class="t-out">● Running tests... <span class="t-acc">✓ 12 passed</span></span>
+      <span class="t-out">● Committing: <span class="t-hi">feat(dashboard): add cost breakdown view</span></span>
+      <span class="t-comment" style="margin-top:6px" data-t='{"en":"# Not autocomplete. A collaborator inside your project.","fr":"# Pas de l&apos;autocomplétion. Un collaborateur dans votre projet."}'>
+        # Not autocomplete. A collaborator inside your project.</span>
+    </div>
+  </div>
+  <div class="body-text ai" style="margin-top:20px"
+    data-t='{"en":"An AI that <span class=\"hl\">reads your code, understands your architecture, executes, tests and commits</span> with full memory of where it is.<br>Vision capabilities too: screenshot your UI and Claude sees and diagnoses the visual bug directly.","fr":"Une IA qui <span class=\"hl\">lit votre code, comprend l&apos;architecture, exécute, teste et commit</span> avec mémoire complète du projet.<br>Capacités vision incluses : screenshot de l&apos;UI puis Claude voit et diagnostique le bug visuel directement."}'>
+    An AI that <span class="hl">reads your code, understands your architecture, executes, tests and commits</span> with full memory of where it is.<br>Vision capabilities too: screenshot your UI and Claude sees and diagnoses the visual bug directly.</div>
+</div>
+
+<!-- 3 · THREE PROJECTS -->
+<div class="slide" id="s3">
+  <div class="prompt ai" data-t='{"en":"ls ~/projects/ — three intentions that became code","fr":"ls ~/projects/ — trois intentions devenues du code"}'>ls ~/projects/ — three intentions that became code</div>
+  <div class="h-large ai" data-t='{"en":"Three projects. <span class=\"accent\">One proof.</span>","fr":"Trois projets. <span class=\"accent\">Une preuve.</span>"}'>Three projects. <span class="accent">One proof.</span></div>
+  <div class="projects-grid ai">
+    <div class="project-card">
+      <div class="project-name">ovh-cost-manager</div>
+      <div class="project-stack">React · Express · SQLite</div>
+      <div class="project-desc"
+        data-t='{"en":"An internal dashboard that was missing from our stack. I described what I needed, Claude built it in hours: monthly billing breakdown, service comparisons, trend charts, cost forecasting. In production the next day, open source the day after.","fr":"Un dashboard interne qui manquait dans notre stack. J&apos;ai décrit ce dont j&apos;avais besoin, Claude l&apos;a construit en quelques heures : décomposition de la facturation mensuelle, comparaisons de services, graphiques de tendances, prévisions. En production le lendemain, open source le surlendemain."}'>
+        An internal dashboard that was missing from our stack. I described what I needed, Claude built it in hours: monthly billing breakdown, service comparisons, trend charts, cost forecasting. In production the next day, open source the day after.</div>
+      <span class="project-badge">AGPL-3.0</span>
+      <a class="project-link" href="https://github.com/mmaudet/ovh-cost-manager" target="_blank">⎋ github.com/mmaudet/ovh-cost-manager</a>
+    </div>
+    <div class="project-card">
+      <div class="project-name">browserlet</div>
+      <div class="project-stack">Chrome Extension · BSL/YAML · TypeScript</div>
+      <div class="project-desc"
+        data-t='{"en":"Semantic web automation with a key architectural choice: AI generates the automation script once using semantic selectors and ARIA roles, then execution is fully deterministic with no AI at runtime. A credential vault with AES-256-GCM encryption. Zero-trust in the browser.","fr":"Automatisation web sémantique avec un choix architectural clé : l&apos;IA génère le script d&apos;automatisation une fois avec des sélecteurs sémantiques et des rôles ARIA, puis l&apos;exécution est entièrement déterministe sans IA à l&apos;exécution. Coffre-fort de credentials avec chiffrement AES-256-GCM. Zero-trust dans le navigateur."}'>
+        Semantic web automation with a key architectural choice: AI generates the automation script once using semantic selectors and ARIA roles, then execution is fully deterministic with no AI at runtime. A credential vault with AES-256-GCM encryption. Zero-trust in the browser.</div>
+      <span class="project-badge">Open Source</span>
+      <a class="project-link" href="https://github.com/mmaudet/browserlet" target="_blank">⎋ github.com/mmaudet/browserlet</a>
+    </div>
+    <div class="project-card">
+      <div class="project-name">visio-mobile</div>
+      <div class="project-stack">Rust · iOS + Android + Desktop</div>
+      <div class="project-desc"
+        data-t='{"en":"Native mobile app for La Suite Numérique Meet. Built in Rust, using the LiveKit Rust SDK for real-time video. Adaptive UI that switches layout based on mobility context: full interface when stationary, compact one-hand layout when walking, ultra-minimal with giant mute button when driving. Local Whisper transcription planned.","fr":"App mobile native pour La Suite Numérique Meet. Construite en Rust, utilisant le LiveKit Rust SDK pour la vidéo en temps réel. UI adaptative qui change de disposition selon le contexte de mobilité : interface complète en stationnaire, disposition compacte à une main en marchant, ultra-minimal avec gros bouton muet en conduisant. Transcription Whisper locale prévue."}'>
+        Native mobile app for La Suite Numérique Meet. Built in Rust, using the LiveKit Rust SDK for real-time video. Adaptive UI that switches layout based on mobility context: full interface when stationary, compact one-hand layout when walking, ultra-minimal with giant mute button when driving. Local Whisper transcription planned.</div>
+      <span class="project-badge">AGPL-3.0</span>
+      <a class="project-link" href="https://github.com/mmaudet/visio-mobile" target="_blank">⎋ github.com/mmaudet/visio-mobile</a>
+    </div>
+  </div>
+  <div class="metrics-row ai" style="max-width:100%">
+    <div class="metric-card">
+      <div class="metric-num" style="font-size:clamp(1rem,1.9vw,1.7rem)" data-t='{"en":"3× up to 50×!","fr":"3× jusqu&apos;à 50× !"}'>3× up to 50×!</div>
+      <div class="metric-label" data-t='{"en":"faster delivery<br>3 months → 3 days","fr":"livraison accélérée<br>3 mois → 3 jours"}'>faster delivery<br>3 months → 3 days</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num">0</div>
+      <div class="metric-label" data-t='{"en":"lines written by hand<br>since December 2025","fr":"lignes écrites à la main<br>depuis décembre 2025"}'>lines written by hand<br>since December 2025</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="font-size:clamp(1.1rem,2vw,1.7rem)" data-t='{"en":"1 month only","fr":"1 mois seulement"}'>1 month only</div>
+      <div class="metric-label" data-t='{"en":"advanced MVP · 3 platforms · 2 native mobile","fr":"MVP avancé · 3 plateformes · 2 mobiles natifs"}'>advanced MVP · 3 platforms · 2 native mobile</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4 · FOUR PHASES -->
+<div class="slide" id="s4">
+  <div class="prompt ai" data-t='{"en":"git log — evolution of AI-assisted development","fr":"git log — évolution du dev assisté par IA"}'>git log — evolution of AI-assisted development</div>
+  <div class="h-large ai" data-t='{"en":"Four phases. <span class=\"accent\">Most stop at 2.</span>","fr":"Quatre phases. <span class=\"accent\">La plupart s&apos;arrêtent à 2.</span>"}'>Four phases. <span class="accent">Most stop at 2.</span></div>
+
+  <div class="timeline-wrap ai">
+    <div class="tl-track">
+      <div class="tl-step done" onclick="showPhaseDetail(0)">
+        <div class="tl-dot"></div>
+        <div class="tl-label" data-t='{"en":"Phase 1","fr":"Phase 1"}'>Phase 1</div>
+        <div class="tl-card" data-t='{"en":"Editor generation<br><span style=\"color:var(--text-muted)\">Copilot · Cursor</span>","fr":"Génération éditeur<br><span style=\"color:var(--text-muted)\">Copilot · Cursor</span>"}'>Editor generation<br><span style="color:var(--text-muted)">Copilot · Cursor</span></div>
+      </div>
+      <div class="tl-step done" onclick="showPhaseDetail(1)">
+        <div class="tl-dot"></div>
+        <div class="tl-label" data-t='{"en":"Phase 2","fr":"Phase 2"}'>Phase 2</div>
+        <div class="tl-card" data-t='{"en":"Vibe coding<br><span style=\"color:var(--text-muted)\">Chat-based</span>","fr":"Vibe coding<br><span style=\"color:var(--text-muted)\">Par chat</span>"}'>Vibe coding<br><span style="color:var(--text-muted)">Chat-based</span></div>
+      </div>
+      <div class="tl-step done" onclick="showPhaseDetail(2)">
+        <div class="tl-dot"></div>
+        <div class="tl-label" data-t='{"en":"Phase 3","fr":"Phase 3"}'>Phase 3</div>
+        <div class="tl-card" data-t='{"en":"Coding agent<br><span style=\"color:var(--text-muted)\">Claude Code</span>","fr":"Agent de coding<br><span style=\"color:var(--text-muted)\">Claude Code</span>"}'>Coding agent<br><span style="color:var(--text-muted)">Claude Code</span></div>
+      </div>
+      <div class="tl-step current" onclick="showPhaseDetail(3)">
+        <div class="tl-dot"></div>
+        <div class="tl-label" data-t='{"en":"Phase 4 ★","fr":"Phase 4 ★"}'>Phase 4 ★</div>
+        <div class="tl-card" data-t='{"en":"Context engineering<br>&amp; meta-prompting","fr":"Context engineering<br>&amp; méta-prompting"}'>Context engineering<br>&amp; meta-prompting</div>
+      </div>
+    </div>
+    <div class="ai" style="text-align:center;margin-top:10px;font-size:10px;color:var(--text-muted);letter-spacing:.08em"
+      data-t='{"en":"↑ click a phase to explore ↑","fr":"↑ cliquez sur une phase pour explorer ↑"}'>↑ click a phase to explore ↑</div>
+  </div>
+
+  <div id="phase-detail">
+    <div class="pd-title" id="pd-title"></div>
+    <div class="pd-body" id="pd-body"></div>
+  </div>
+</div>
+
+<!-- 5 · CONTEXT ENGINEERING -->
+<div class="slide" id="s5">
+  <div class="prompt ai">cat CLAUDE.md</div>
+  <div class="h-large ai" data-t='{"en":"The real skill: <span class=\"accent\">context, market fit &amp; tests.</span> Not code.","fr":"Le vrai skill : <span class=\"accent\">contexte, market fit &amp; tests.</span> Pas du code."}'>The real skill: <span class="accent">context, market fit &amp; tests.</span> Not code.</div>
+  <div class="two-col ai">
+    <div class="col-card sovereign">
+      <div class="col-title" data-t='{"en":"CLAUDE.md — what it contains","fr":"CLAUDE.md — ce qu&apos;il contient"}'>CLAUDE.md — what it contains</div>
+      <div class="col-item hi" data-t='{"en":"Architecture decisions (locked, not to be questioned)","fr":"Décisions d&apos;architecture (verrouillées, non négociables)"}'>Architecture decisions (locked, not to be questioned)</div>
+      <div class="col-item hi" data-t='{"en":"Coding conventions enforced on every file","fr":"Conventions de code appliquées sur chaque fichier"}'>Coding conventions enforced on every file</div>
+      <div class="col-item" data-t='{"en":"What NOT to do — explicit prohibitions","fr":"Ce qu&apos;il NE FAUT PAS faire — prohibitions explicites"}'>What NOT to do — explicit prohibitions</div>
+      <div class="col-item" data-t='{"en":"Tech stack rationale and version constraints","fr":"Raisonnement du stack et contraintes de version"}'>Tech stack rationale and version constraints</div>
+      <div class="col-item" data-t='{"en":"PR checklist and test expectations","fr":"Checklist PR et attentes de tests"}'>PR checklist and test expectations</div>
+      <div class="col-item" data-t='{"en":"Team vocabulary and domain concepts","fr":"Vocabulaire équipe et concepts métier"}'>Team vocabulary and domain concepts</div>
+    </div>
+    <div class="col-card cloud">
+      <div class="col-title" data-t='{"en":"Meta-prompting principles","fr":"Principes du méta-prompting"}'>Meta-prompting principles</div>
+      <div class="col-item hi" data-t='{"en":"Instruct HOW to work, not just WHAT to do","fr":"Instruire sur COMMENT travailler, pas seulement QUOI faire"}'>Instruct HOW to work, not just WHAT to do</div>
+      <div class="col-item hi" data-t='{"en":"PRD (Product Requirements Doc) as structured agent input","fr":"PRD (Product Requirements Doc) comme input structuré pour l&apos;agent"}'>PRD (Product Requirements Doc) as structured agent input</div>
+      <div class="col-item" data-t='{"en":"Persistent project memory across sessions","fr":"Mémoire projet persistante entre les sessions"}'>Persistent project memory across sessions</div>
+      <div class="col-item" data-t='{"en":"Explicit error taxonomy defined upfront","fr":"Taxonomie d&apos;erreurs définie en amont"}'>Explicit error taxonomy defined upfront</div>
+      <div class="col-item" data-t='{"en":"Roles and responsibilities stated clearly","fr":"Rôles et responsabilités énoncés clairement"}'>Roles and responsibilities stated clearly</div>
+    </div>
+  </div>
+  <div class="body-text ai" style="margin-top:16px"
+    data-t='{"en":"The differentiating skill is no longer <span class=\"hl\">writing code</span>.<br>It is <span class=\"gr\">writing context, the market fit and the tests</span> — and that is already what good tech leads do.","fr":"Le skill différenciant n&apos;est plus <span class=\"hl\">écrire du code</span>.<br>C&apos;est <span class=\"gr\">écrire du contexte, le market fit et les tests</span> — ce que font déjà les bons tech leads."}'>
+    The differentiating skill is no longer <span class="hl">writing code</span>.<br>It is <span class="gr">writing context, the market fit and the tests</span> — and that is already what good tech leads do.</div>
+</div>
+
+<!-- 6 · TWO PIPELINES -->
+<div class="slide" id="s6">
+  <div class="prompt ai" data-t='{"en":"diff claude-code.log open-code-sovereign.log","fr":"diff claude-code.log open-code-souverain.log"}'>diff claude-code.log open-code-sovereign.log</div>
+  <div class="h-large ai" data-t='{"en":"Two pipelines. <span class=\"accent\">One conviction.</span>","fr":"Deux filières. <span class=\"accent\">Une conviction.</span>"}'>Two pipelines. <span class="accent">One conviction.</span></div>
+  <div class="two-col ai">
+    <div class="col-card sovereign">
+      <div class="col-title" data-t='{"en":"Open Code — Sovereign infra","fr":"Open Code — Infra souveraine"}'>Open Code — Infra souveraine</div>
+      <div class="col-item hi" data-t='{"en":"OpenRouter + LibreChat stack","fr":"Stack OpenRouter + LibreChat"}'>OpenRouter + LibreChat stack</div>
+      <div class="col-item hi" data-t='{"en":"Open models: Qwen, Mistral, GLM, Kimi","fr":"Modèles ouverts : Qwen, Mistral, GLM, Kimi"}'>Open models: Qwen, Mistral, GLM, Kimi</div>
+      <div class="col-item" data-t='{"en":"Full confidentiality compliance","fr":"Conformité confidentialité totale"}'>Full confidentiality compliance</div>
+      <div class="col-item" data-t='{"en":"LINAGORA-hosted and auditable","fr":"Hébergé LINAGORA et auditable"}'>LINAGORA-hosted and auditable</div>
+      <div class="col-item hi" data-t='{"en":"Performance gap closing fast","fr":"Écart de performance qui se réduit vite"}'>Performance gap closing fast</div>
+      <div class="col-item hi" data-t='{"en":"The trajectory of 2026","fr":"La trajectoire de 2026"}'>The trajectory of 2026</div>
+    </div>
+    <div class="col-card cloud">
+      <div class="col-title">Claude Code / Anthropic</div>
+      <div class="col-item hi" data-t='{"en":"Best reasoning quality today","fr":"Meilleure qualité de raisonnement aujourd&apos;hui"}'>Best reasoning quality today</div>
+      <div class="col-item hi" data-t='{"en":"Native context engineering via CLAUDE.md","fr":"Context engineering natif via CLAUDE.md"}'>Native context engineering via CLAUDE.md</div>
+      <div class="col-item" data-t='{"en":"Complex multi-file autonomous edits","fr":"Éditions multi-fichiers autonomes et complexes"}'>Complex multi-file autonomous edits</div>
+      <div class="col-item" data-t='{"en":"Vision: screenshot to visual bug diagnosed","fr":"Vision : screenshot vers bug visuel diagnostiqué"}'>Vision: screenshot to visual bug diagnosed</div>
+      <div class="col-item neg" data-t='{"en":"US infrastructure","fr":"Infrastructure US"}'>US infrastructure</div>
+      <div class="col-item neg" data-t='{"en":"Data sovereignty concerns","fr":"Questions de souveraineté des données"}'>Data sovereignty concerns</div>
+    </div>
+  </div>
+  <div class="body-text ai" style="margin-top:16px"
+    data-t='{"en":"I use both depending on the project. And I observe that the gap <span class=\"hl\">narrows every month</span>.","fr":"J&apos;utilise les deux selon le projet. Et je constate que l&apos;écart <span class=\"hl\">se réduit chaque mois</span>."}'>
+    I use both depending on the project. And I observe that the gap <span class="hl">narrows every month</span>.</div>
+</div>
+
+<!-- 7 · LEARNINGS -->
+<div class="slide" id="s7">
+  <div class="prompt ai" data-t='{"en":"tail -n 6 lessons-learned.log","fr":"tail -n 6 lecons-apprises.log"}'>tail -n 6 lessons-learned.log</div>
+  <div class="h-large ai" data-t='{"en":"Objective and measured learnings.","fr":"Apprentissages objectifs et objectivés."}'>Objective and measured learnings.</div>
+  <table class="data-table ai">
+    <thead><tr>
+      <th data-t='{"en":"Finding","fr":"Constat"}'>Finding</th>
+      <th data-t='{"en":"Before","fr":"Avant"}'>Before</th>
+      <th data-t='{"en":"After","fr":"Après"}'>After</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td data-t='{"en":"Time-to-orbit of a new project","fr":"Temps de mise en orbite d&apos;un projet"}'>Time-to-orbit of a new project</td>
+        <td class="am"><span class="dw"><span class="da" id="da1">3 months</span><span class="db" id="db1">3 mois</span></span></td>
+        <td class="hi" data-t='{"en":"3 days","fr":"3 jours"}'>3 days</td>
+      </tr>
+      <tr>
+        <td data-t='{"en":"Output quality driver","fr":"Facteur de qualité de l&apos;output"}'>Output quality driver</td>
+        <td class="mu" data-t='{"en":"Model skill","fr":"Compétence du modèle"}'>Model skill</td>
+        <td class="hi" data-t='{"en":"80% context quality","fr":"80% qualité du contexte"}'>80% context quality</td>
+      </tr>
+      <tr>
+        <td data-t='{"en":"Dominant error type","fr":"Type d&apos;erreur dominant"}'>Dominant error type</td>
+        <td class="am" data-t='{"en":"Syntax bugs","fr":"Bugs syntaxiques"}'>Syntax bugs</td>
+        <td class="am" data-t='{"en":"Architectural drift","fr":"Dérive architecturale"}'>Architectural drift</td>
+      </tr>
+      <tr>
+        <td data-t='{"en":"Required skill shift","fr":"Évolution du skill requis"}'>Required skill shift</td>
+        <td class="mu" data-t='{"en":"Writing code","fr":"Écrire du code"}'>Writing code</td>
+        <td class="hi" data-t='{"en":"Specifying intent clearly","fr":"Spécifier l&apos;intention clairement"}'>Specifying intent clearly</td>
+      </tr>
+      <tr>
+        <td data-t='{"en":"Context engineering learning curve","fr":"Courbe context engineering"}'>Context engineering learning curve</td>
+        <td class="mu">—</td>
+        <td class="hi" data-t='{"en":"Real but short","fr":"Réelle mais courte"}'>Real but short</td>
+      </tr>
+      <tr>
+        <td data-t='{"en":"Bottleneck moved to","fr":"Goulot d&apos;étranglement déplacé vers"}'>Bottleneck moved to</td>
+        <td class="mu" data-t='{"en":"Execution","fr":"L&apos;exécution"}'>Execution</td>
+        <td class="hi" data-t='{"en":"Specification and (manual) tests","fr":"Spécification et tests (manuels)"}'>Specification and (manual) tests</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 8 · OPEN QUESTIONS -->
+<div class="slide" id="s8">
+  <div class="prompt ai" data-t='{"en":"echo &apos;unresolved&apos; > questions.txt","fr":"echo &apos;non-résolu&apos; > questions.txt"}'>echo 'unresolved' > questions.txt</div>
+  <div class="h-large ai"><span data-t='{"en":"Open questions.","fr":"Questions ouvertes."}'>Open questions.</span> <span class="amber-c" data-t='{"en":"My own.","fr":"Les miennes."}'>My own.</span></div>
+  <div class="questions-list ai">
+    <div class="question-item">
+      <div class="q-mark">?</div>
+      <div><strong data-t='{"en":"Augmented teams","fr":"Équipes augmentées"}'>Augmented teams</strong><br>
+        <span data-t='{"en":"In a team of 10 devs: who prompts, who reviews, who architects? The roles have not been reinvented yet.","fr":"Dans une équipe de 10 devs : qui prompte, qui relit, qui architecture ? Les rôles n&apos;ont pas encore été réinventés."}'>In a team of 10 devs: who prompts, who reviews, who architects? The roles have not been reinvented yet.</span></div>
+    </div>
+    <div class="question-item">
+      <div class="q-mark">?</div>
+      <div><strong data-t='{"en":"Maintainability","fr":"Maintenabilité"}'>Maintainability</strong><br>
+        <span data-t='{"en":"Is generated code maintainable in 2 years by someone without the original context? What about turnover?","fr":"Le code généré est-il maintenable dans 2 ans par quelqu&apos;un sans le contexte d&apos;origine ? Quid du turnover ?"}'>Is generated code maintainable in 2 years by someone without the original context? What about turnover?</span></div>
+    </div>
+    <div class="question-item">
+      <div class="q-mark">?</div>
+      <div><strong data-t='{"en":"Complexity ceiling","fr":"Plafond de complexité"}'>Complexity ceiling</strong><br>
+        <span data-t='{"en":"Current projects are a few thousand lines. What happens at 100k? With 3 years of technical debt?","fr":"Les projets actuels font quelques milliers de lignes. Que se passe-t-il à 100k ? Avec 3 ans de dette technique ?"}'>Current projects are a few thousand lines. What happens at 100k? With 3 years of technical debt?</span></div>
+    </div>
+    <div class="question-item">
+      <div class="q-mark">?</div>
+      <div><strong>Process</strong><br>
+        <span data-t='{"en":"Gitflow, pair-programming with AI, code review of generated code: our processes must evolve.","fr":"Gitflow, pair-programming avec IA, revue de code généré : nos process doivent évoluer."}'>Gitflow, pair-programming with AI, code review of generated code: our processes must evolve.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 9 · PERSPECTIVES -->
+<div class="slide" id="s9">
+  <div class="prompt ai" data-t='{"en":"git log HEAD..future/main","fr":"git log HEAD..futur/main"}'>git log HEAD..future/main</div>
+  <div class="h-large ai"><span data-t='{"en":"The gap is ","fr":"L&apos;écart se "}'>The gap is </span><span class="accent" data-t='{"en":"closing.","fr":"réduit."}'>closing.</span>
+    <span class="dim" style="font-size:.55em;font-weight:400" data-t='{"en":" 12–18 months.","fr":" 12–18 mois."}'>12–18 months.</span></div>
+  <table class="data-table ai">
+    <thead><tr>
+      <th data-t='{"en":"Model / Stack","fr":"Modèle / Stack"}'>Model / Stack</th>
+      <th data-t='{"en":"Origin","fr":"Origine"}'>Origin</th>
+      <th data-t='{"en":"Strength","fr":"Point fort"}'>Strength</th>
+      <th data-t='{"en":"Sovereignty","fr":"Souveraineté"}'>Sovereignty</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="hi">Qwen 3.x</td><td data-t='{"en":"Alibaba / open weights","fr":"Alibaba / poids ouverts"}'>Alibaba / open weights</td><td class="hi" data-t='{"en":"Best open coding model","fr":"Meilleur coding open"}'>Best open coding model</td><td class="hi" data-t='{"en":"✓ Self-hostable","fr":"✓ Auto-hébergeable"}'>✓ Self-hostable</td></tr>
+      <tr><td class="hi">GLM-4</td><td data-t='{"en":"Zhipu AI / open weights","fr":"Zhipu AI / poids ouverts"}'>Zhipu AI / open weights</td><td class="hi" data-t='{"en":"Multilingual + code","fr":"Multilingue + code"}'>Multilingual + code</td><td class="hi" data-t='{"en":"✓ Self-hostable","fr":"✓ Auto-hébergeable"}'>✓ Self-hostable</td></tr>
+      <tr><td class="hi">Kimi k2</td><td data-t='{"en":"Moonshot AI / open weights","fr":"Moonshot AI / poids ouverts"}'>Moonshot AI / open weights</td><td class="hi" data-t='{"en":"Long context + reasoning","fr":"Long contexte + raisonnement"}'>Long context + reasoning</td><td class="hi" data-t='{"en":"✓ Self-hostable","fr":"✓ Auto-hébergeable"}'>✓ Self-hostable</td></tr>
+      <tr><td class="hi">Mistral</td><td data-t='{"en":"Mistral AI / European","fr":"Mistral AI / Européen"}'>Mistral AI / European</td><td class="am" data-t='{"en":"Good, improving fast","fr":"Bon, en amélioration rapide"}'>Good, improving fast</td><td class="hi" data-t='{"en":"✓ Self-hostable, EU, auditable","fr":"✓ Auto-hébergeable, EU, auditable"}'>✓ Self-hostable, EU, auditable</td></tr>
+      <tr><td>Claude Code</td><td data-t='{"en":"Anthropic / US","fr":"Anthropic / US"}'>Anthropic / US</td><td class="am" data-t='{"en":"Reference today","fr":"Référence aujourd&apos;hui"}'>Reference today</td><td class="mu" data-t='{"en":"✗ US infra","fr":"✗ Infra US"}'>✗ US infra</td></tr>
+    </tbody>
+  </table>
+  <div class="ai" style="margin-top:20px;font-size:clamp(1rem,1.7vw,1.3rem);line-height:1.7;color:var(--text);font-weight:700;max-width:64ch"
+    data-t='{"en":"The question is no longer <span class=\"accent\">AI or no AI</span>.<br>It is: which infrastructure? Which governance?<br>The developer of tomorrow is a <span class=\"accent\">context engineer</span>.","fr":"La question n&apos;est plus <span class=\"accent\">IA ou pas IA</span>.<br>C&apos;est : quelle infrastructure ? Quelle gouvernance ?<br>Le développeur de demain est un <span class=\"accent\">context engineer</span>."}'>
+    The question is no longer <span class="accent">AI or no AI</span>.<br>It is: which infrastructure? Which governance?<br>The developer of tomorrow is a <span class="accent">context engineer</span>.</div>
+</div>
+
+<!-- 10 · RESOLUTION -->
+<div class="slide" id="s10">
+  <div class="prompt ai" data-t='{"en":"git show HEAD:last-commit.txt","fr":"git show HEAD:dernier-commit.txt"}'>git show HEAD:last-commit.txt</div>
+  <div class="h-giant ai glitch" data-text="I stopped coding.">
+    <span class="strike" data-t='{"en":"I stopped coding.","fr":"J&apos;ai arrêté de coder."}'>I stopped coding.</span></div>
+  <div class="h-giant ai" style="margin-top:6px">
+    <span data-t='{"en":"I changed my ","fr":"J&apos;ai changé de "}'>I changed my </span><span class="accent" data-t='{"en":"abstraction layer","fr":"couche d&apos;abstraction"}'>abstraction layer</span><span class="blink">_</span></div>
+  <div class="sep ai"></div>
+  <div class="ai" style="font-size:clamp(1.2rem,2.3vw,1.8rem);line-height:1.55;color:var(--text);font-weight:700;max-width:56ch;margin-top:8px"
+    data-t='{"en":"December 2025 was not my last line.<br>It was my last line <span class=\"accent\">written by hand</span>.","fr":"Décembre 2025 n&apos;était pas ma dernière ligne.<br>C&apos;était ma dernière ligne <span class=\"accent\">écrite à la main</span>."}'>
+    December 2025 was not my last line.<br>It was my last line <span class="accent">written by hand</span>.</div>
+</div>
+
+<!-- 11 · CTA -->
+<div class="slide" id="s11">
+  <div class="prompt ai" data-t='{"en":"cat OFFER.md","fr":"cat OFFRE.md"}'>cat OFFER.md</div>
+  <div class="h-large ai"><span data-t='{"en":"Now: ","fr":"Maintenant : "}'>Now: </span><span class="accent" data-t='{"en":"your turn.","fr":"à vous."}'>your turn.</span></div>
+  <div class="cta-box ai" data-label="LINAGORA · ACCELERATION OFFER">
+    <div class="cta-text"
+      data-t='{"en":"We are building an <strong>acceleration offer</strong> for dev teams who want to make this shift, with sovereignty by design and not as an afterthought.<br><br>We are looking for <strong>partners to co-build it</strong> with us.<br>If you want to go from 3 months to 3 days in your own team, let us talk.","fr":"Nous construisons une <strong>offre d&apos;accélération</strong> pour les équipes dev qui veulent faire ce saut, avec la souveraineté by design et non comme une option.<br><br>Nous cherchons des <strong>partenaires pour la co-construire</strong>.<br>Si vous voulez passer de 3 mois à 3 jours dans votre équipe, parlons-en."}'>
+      We are building an <strong>acceleration offer</strong> for dev teams who want to make this shift, with sovereignty by design and not as an afterthought.<br><br>We are looking for <strong>partners to co-build it</strong> with us.<br>If you want to go from 3 months to 3 days in your own team, let us talk.</div>
+    <div class="cta-contact">
+      <div>Michel-Marie Maudet · Directeur Général · LINAGORA</div>
+      <div><a href="mailto:mmaudet@linagora.com">mmaudet@linagora.com</a></div>
+      <div><a href="https://www.github.com/mmaudet" target="_blank">github.com/mmaudet</a> · <a href="https://linagora.com" target="_blank">linagora.com</a></div>
+      <div style="margin-top:8px;color:var(--green);font-weight:700;font-size:14px">last-line.dev</div>
+    </div>
+  </div>
+  <div class="ai" style="margin-top:14px;font-size:11px;color:var(--text-muted)"
+    data-t='{"en":"All projects are open source and publicly available on GitHub.","fr":"Tous les projets sont open source et disponibles publiquement sur GitHub."}'>All projects are open source and publicly available on GitHub.</div>
+</div>
+
+<!-- 12 · GLOSSARY -->
+<div class="slide" id="s12">
+  <div class="prompt ai" data-t='{"en":"cat glossary.md","fr":"cat glossaire.md"}'>cat glossary.md</div>
+  <div class="h-large ai" data-t='{"en":"Glossary.","fr":"Glossaire."}'>Glossary.</div>
+  <div class="two-col ai" style="gap:14px">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="col-card sovereign" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px">Context Engineering</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"The practice of building a <strong style=\"color:var(--green)\">structured work environment</strong> for an AI agent: architecture decisions, conventions, prohibitions, vocabulary, and project memory. Not prompting — engineering the context in which the AI operates.","fr":"La pratique de construire un <strong style=\"color:var(--green)\">environnement de travail structuré</strong> pour un agent IA : décisions d&apos;architecture, conventions, prohibitions, vocabulaire et mémoire projet. Pas du prompting — l&apos;ingénierie du contexte dans lequel l&apos;IA opère."}'>
+          The practice of building a <strong style="color:var(--green)">structured work environment</strong> for an AI agent: architecture decisions, conventions, prohibitions, vocabulary, and project memory. Not prompting — engineering the context in which the AI operates.</div>
+      </div>
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">CLAUDE.md</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"A project-root file that Claude Code reads before every session. Contains architecture decisions, coding conventions, explicit prohibitions, and domain vocabulary. The <strong>persistent memory</strong> of the AI within your project.","fr":"Un fichier à la racine du projet que Claude Code lit avant chaque session. Contient les décisions d&apos;architecture, conventions de code, prohibitions explicites et vocabulaire métier. La <strong>mémoire persistante</strong> de l&apos;IA dans votre projet."}'>
+          A project-root file that Claude Code reads before every session. Contains architecture decisions, coding conventions, explicit prohibitions, and domain vocabulary. The <strong>persistent memory</strong> of the AI within your project.</div>
+      </div>
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">Meta-prompting</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"Instructing the AI on <strong>how to work</strong>, not just what to do. Defining its reasoning approach, review process, error handling, and behavioral constraints before it starts coding.","fr":"Instruire l&apos;IA sur <strong>comment travailler</strong>, pas seulement quoi faire. Définir son approche de raisonnement, son processus de revue, sa gestion d&apos;erreurs et ses contraintes comportementales avant qu&apos;elle ne commence à coder."}'>
+          Instructing the AI on <strong>how to work</strong>, not just what to do. Defining its reasoning approach, review process, error handling, and behavioral constraints before it starts coding.</div>
+      </div>
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">PRD</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"Product Requirements Document. A structured specification that serves as <strong>operational brief</strong> for the coding agent: features, constraints, acceptance criteria, edge cases. Replaces the verbal back-and-forth of vibe coding.","fr":"Product Requirements Document. Une spécification structurée qui sert de <strong>brief opérationnel</strong> pour l&apos;agent de coding : fonctionnalités, contraintes, critères d&apos;acceptation, cas limites. Remplace les allers-retours verbaux du vibe coding."}'>
+          Product Requirements Document. A structured specification that serves as <strong>operational brief</strong> for the coding agent: features, constraints, acceptance criteria, edge cases. Replaces the verbal back-and-forth of vibe coding.</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">Vibe Coding</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"Development by conversation: describe what you want in natural language, iterate via chat, copy-paste and adjust. A <strong>real productivity gain</strong>, but still manual driving — you translate intent one exchange at a time.","fr":"Développement par conversation : décrire ce qu&apos;on veut en langage naturel, itérer par chat, copier-coller et ajuster. Un <strong>vrai gain de productivité</strong>, mais toujours de la conduite manuelle — vous traduisez l&apos;intention un échange à la fois."}'>
+          Development by conversation: describe what you want in natural language, iterate via chat, copy-paste and adjust. A <strong>real productivity gain</strong>, but still manual driving — you translate intent one exchange at a time.</div>
+      </div>
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">Coding Agent</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"An AI that <strong>executes autonomously</strong> inside your project: reads files, writes code, runs tests, fixes failures, commits. Not a chat assistant — a collaborator with full project access. Claude Code is the reference implementation.","fr":"Une IA qui <strong>s&apos;exécute de façon autonome</strong> dans votre projet : lit les fichiers, écrit du code, lance les tests, corrige les échecs, commit. Pas un assistant chat — un collaborateur avec accès complet au projet. Claude Code est l&apos;implémentation de référence."}'>
+          An AI that <strong>executes autonomously</strong> inside your project: reads files, writes code, runs tests, fixes failures, commits. Not a chat assistant — a collaborator with full project access. Claude Code is the reference implementation.</div>
+      </div>
+      <div class="col-card" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px;color:var(--text)">Architectural Drift</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"The dominant error type with AI-generated code. The AI produces working code that <strong>gradually diverges</strong> from the intended architecture. Context engineering is the antidote: explicit constraints prevent drift before it starts.","fr":"Le type d&apos;erreur dominant avec le code généré par IA. L&apos;IA produit du code fonctionnel qui <strong>diverge progressivement</strong> de l&apos;architecture prévue. Le context engineering est l&apos;antidote : des contraintes explicites empêchent la dérive avant qu&apos;elle ne commence."}'>
+          The dominant error type with AI-generated code. The AI produces working code that <strong>gradually diverges</strong> from the intended architecture. Context engineering is the antidote: explicit constraints prevent drift before it starts.</div>
+      </div>
+      <div class="col-card sovereign" style="padding:16px">
+        <div class="col-title" style="font-size:13px;margin-bottom:8px">Sovereign AI</div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.7"
+          data-t='{"en":"AI infrastructure hosted on <strong style=\"color:var(--green)\">self-controlled servers</strong>, using open-weight models (Qwen, Mistral, GLM, Kimi). Full data sovereignty, auditability, and no dependency on US cloud providers. The trajectory of 2026.","fr":"Infrastructure IA hébergée sur des <strong style=\"color:var(--green)\">serveurs auto-contrôlés</strong>, utilisant des modèles à poids ouverts (Qwen, Mistral, GLM, Kimi). Souveraineté totale des données, auditabilité et aucune dépendance aux fournisseurs cloud US. La trajectoire de 2026."}'>
+          AI infrastructure hosted on <strong style="color:var(--green)">self-controlled servers</strong>, using open-weight models (Qwen, Mistral, GLM, Kimi). Full data sovereignty, auditability, and no dependency on US cloud providers. The trajectory of 2026.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="progress-bar"></div>
+<div id="slide-counter"><em id="cur">01</em> / <span id="tot">13</span></div>
+<div id="nav-hint"><span class="key">←</span> <span class="key">→</span> navigate · <span class="key">F</span> fullscreen</div>
+
+<script>
+// ── State — declared first so every function below can close over them ──
+let cur = 0, lang = 'en', theme = 'light', activePh = 0;
+
+// ── Phase detail data ──
+const phaseDetails = {
+  en: [
+    {
+      title: "Phase 1 — Editor generation",
+      tag: "completed",
+      body: "The AI lives <strong>inside your editor</strong> as a smarter autocomplete. Copilot, Cursor, Tabnine — they predict the next line, suggest a function body, fill a boilerplate. You accept or reject with Tab. <strong>Your hands never leave the keyboard, and your relationship to code hasn't changed.</strong> You're still the author of every line. Most developers are here and think this is what \"AI-assisted development\" means. But it's not. It's the discovery stage."
+    },
+    {
+      title: "Phase 2 — Vibe coding",
+      tag: "completed",
+      body: "You stop typing code line by line. You <strong>describe what you want in natural language</strong>, iterate by chat, copy-paste the result, adjust, re-prompt. The cursor moves less. You review more than you write. Productivity gains are real — but you're still the driver, still translating intent into instructions one exchange at a time. <strong>The bottleneck has shifted from typing to prompting</strong>, but hasn't disappeared."
+    },
+    {
+      title: "Phase 3 — Coding agent",
+      tag: "completed",
+      body: "The AI <strong>executes inside your project</strong>. It reads your files, navigates the architecture, writes across multiple files, runs your test suite, fixes its own failures, and commits. You stop writing code entirely. You become the <strong>CTO of your own session</strong>: you set the direction, validate architectural decisions, review diffs. The output is no longer a suggestion — it's a working commit. This is where \"I haven't written a line since December\" begins."
+    },
+    {
+      title: "Phase 4 — Context engineering &amp; meta-prompting",
+      tag: "I am here. And you?",
+      body: "You stop prompting a model. You start <strong>building a work environment</strong> for the AI. <strong>CLAUDE.md</strong> encodes your architecture decisions, coding conventions, explicit prohibitions, and project vocabulary — the agent reads it before every session. Structured PRDs become the agent's operational brief. You define <strong>how the AI should think</strong>, not just what it should do. The AI knows where it is, what's expected, what's forbidden, and how to behave. <strong>This is where the real performance gap appears</strong> — the difference between a 3x gain and a 50x gain. And it's where almost no one has gone yet."
+    }
+  ],
+  fr: [
+    {
+      title: "Phase 1 — Génération dans l'éditeur",
+      tag: "complétée",
+      body: "L'IA vit <strong>dans votre éditeur</strong> comme une autocomplétion améliorée. Copilot, Cursor, Tabnine — ils prédisent la ligne suivante, suggèrent le corps d'une fonction, remplissent le boilerplate. Vous acceptez ou refusez avec Tab. <strong>Vos mains ne quittent jamais le clavier, et votre rapport au code n'a pas changé.</strong> Vous restez l'auteur de chaque ligne. La plupart des développeurs sont ici et pensent que c'est ça le « dev assisté par IA ». Mais ce n'est pas ça. C'est l'étape de la découverte."
+    },
+    {
+      title: "Phase 2 — Vibe coding",
+      tag: "complétée",
+      body: "Vous arrêtez de taper du code ligne par ligne. Vous <strong>décrivez ce que vous voulez en langage naturel</strong>, itérez par chat, copiez-collez le résultat, ajustez, re-promptez. Le curseur bouge moins. Vous relisez plus que vous n'écrivez. Les gains de productivité sont réels — mais vous êtes toujours le conducteur, toujours en train de traduire l'intention en instructions un échange à la fois. <strong>Le goulot d'étranglement s'est déplacé de la frappe vers le prompting</strong>, mais n'a pas disparu."
+    },
+    {
+      title: "Phase 3 — Agent de coding",
+      tag: "complétée",
+      body: "L'IA <strong>s'exécute dans votre projet</strong>. Elle lit vos fichiers, navigue l'architecture, écrit sur plusieurs fichiers, lance vos tests, corrige ses propres échecs et commit. Vous n'écrivez plus de code du tout. Vous devenez le <strong>CTO de votre propre session</strong> : vous fixez le cap, validez les décisions d'architecture, relisez les diffs. L'output n'est plus une suggestion — c'est un commit fonctionnel. C'est là que « je n'ai pas écrit une ligne depuis décembre » commence."
+    },
+    {
+      title: "Phase 4 — Context engineering &amp; méta-prompting",
+      tag: "Je suis ici. Et vous ?",
+      body: "Vous arrêtez de prompter un modèle. Vous commencez à <strong>construire un environnement de travail</strong> pour l'IA. <strong>CLAUDE.md</strong> encode vos décisions d'architecture, conventions de code, prohibitions explicites et vocabulaire projet — l'agent le lit avant chaque session. Les PRDs structurés deviennent le brief opérationnel de l'agent. Vous définissez <strong>comment l'IA doit penser</strong>, pas seulement ce qu'elle doit faire. L'IA sait où elle est, ce qu'on attend, ce qui est interdit, et comment se comporter. <strong>C'est là qu'apparaît le vrai écart de performance</strong> — la différence entre un gain de 3x et un gain de 50x. Et c'est là où presque personne n'est encore allé."
+    }
+  ]
+};
+
+function showPhaseDetail(idx) {
+  activePh = idx;
+  document.querySelectorAll('.tl-step').forEach((s, i) => {
+    s.classList.toggle('sel', i === idx && !s.classList.contains('current'));
+  });
+  const d = phaseDetails[lang][idx];
+  const el = document.getElementById('phase-detail');
+  document.getElementById('pd-title').innerHTML = d.title + ' <span class="pd-tag">' + d.tag + '</span>';
+  document.getElementById('pd-body').innerHTML = d.body;
+  el.classList.toggle('major', idx === 3);
+  el.style.display = 'block';
+  // Re-trigger fadeUp animation
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'fadeUp .3s ease forwards';
+}
+const slides=document.querySelectorAll('.slide');
+const tot=slides.length;
+document.getElementById('tot').textContent=String(tot).padStart(2,'0');
+
+function goTo(n){
+  slides[cur].classList.remove('active');
+  cur=Math.max(0,Math.min(n,tot-1));
+  slides[cur].classList.add('active');
+  document.getElementById('cur').textContent=String(cur+1).padStart(2,'0');
+  document.getElementById('progress-bar').style.width=((cur+1)/tot*100)+'%';
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','ArrowDown',' '].includes(e.key)){e.preventDefault();goTo(cur+1);}
+  if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();goTo(cur-1);}
+  if(e.key==='f'||e.key==='F') document.documentElement.requestFullscreen?.();
+});
+let tx=0;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)goTo(cur+(d>0?1:-1));});
+document.addEventListener('click',e=>{if(e.target.closest('a,.tb-btn,.tl-step,#phase-detail')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
+
+function toggleTheme(){
+  theme=theme==='light'?'dark':'light';
+  document.body.className=theme;
+  document.getElementById('theme-btn').textContent=theme==='light'?'◐ Dark':'◑ Light';
+}
+
+function toggleLang(){
+  lang=lang==='en'?'fr':'en';
+  document.getElementById('lang-btn').textContent=lang==='en'?'🌐 FR':'🌐 EN';
+  applyLang();
+  showPhaseDetail(activePh);
+}
+
+function applyLang(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    try{const m=JSON.parse(el.getAttribute('data-t'));if(m[lang]!==undefined)el.innerHTML=m[lang];}catch(e){}
+  });
+  document.querySelectorAll('.glitch[data-tg]').forEach(el=>{
+    try{const m=JSON.parse(el.getAttribute('data-tg'));if(m[lang])el.setAttribute('data-text',m[lang]);}catch(e){}
+  });
+  const da1=document.getElementById('da1'),db1=document.getElementById('db1');
+  if(da1)da1.textContent=lang==='en'?'3 months':'3 mois';
+  if(db1)db1.textContent=lang==='en'?'3 months':'3 mois';
+}
+
+// ── Heatmap ──
+function buildHeatmap(){
+  const c=document.getElementById('hm');if(!c)return;
+  const grid=document.createElement('div');grid.className='hm-grid';
+  const weeks=56,inf=39;
+  for(let d=0;d<7;d++){
+    const row=document.createElement('div');row.className='hm-row';
+    for(let w=0;w<weeks;w++){
+      const cell=document.createElement('div');cell.className='hm-cell';
+      const after=w>=inf,r=Math.random();
+      if(after){
+        if(r<.07){}else if(r<.22)cell.classList.add('l1');else if(r<.44)cell.classList.add('l2');else if(r<.70)cell.classList.add('l3');else cell.classList.add('l4');
+      }else{
+        if(r<.60){}else if(r<.80)cell.classList.add('l1');else if(r<.93)cell.classList.add('l2');else cell.classList.add('l3');
+      }
+      row.appendChild(cell);
+    }
+    grid.appendChild(row);
+  }
+  c.appendChild(grid);
+  // Labels below heatmap: November 2025 on left, Now on right
+  const labels=document.createElement('div');
+  labels.style.cssText='display:flex;justify-content:space-between;margin-top:4px;font-size:10px;letter-spacing:.06em;text-transform:uppercase';
+  labels.innerHTML='<span style="color:var(--text-muted);padding-left:'+(14*inf/weeks*100/100)+'%" data-t=\'{"en":"← November 2025","fr":"← Novembre 2025"}\'>← November 2025</span><span style="color:var(--green);font-weight:700" data-t=\'{"en":"Now →","fr":"Maintenant →"}\'>Now →</span>';
+  c.appendChild(labels);
+  const ann=document.createElement('div');ann.className='hm-ann';
+  ann.innerHTML='<div class="hm-marker"></div><span data-t=\'{"en":"November 2025: Claude Code arrives. The heatmap changes.","fr":"Novembre 2025 : Claude Code arrive. La heatmap change."}\'>November 2025: Claude Code arrives. The heatmap changes.</span>';
+  c.appendChild(ann);
+  const note=document.createElement('div');
+  note.style.cssText='font-size:11px;color:var(--text-muted);margin-top:6px';
+  note.innerHTML='<span data-t=\'{"en":"Stylized representation. Real data: ","fr":"Représentation stylisée. Données réelles : "}\'>Stylized representation. Real data: </span><a href="https://www.github.com/mmaudet" target="_blank" style="color:var(--green)">github.com/mmaudet</a>';
+  c.appendChild(note);
+}
+
+buildHeatmap();
+showPhaseDetail(0);
+goTo(0);
+</script>
+</body>
+</html>
