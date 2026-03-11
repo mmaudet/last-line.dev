@@ -33,12 +33,13 @@ body.dark #scanlines{opacity:1;}body.light #scanlines{opacity:0;}
 #scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);pointer-events:none;z-index:100;transition:opacity var(--transition);}
 
 /* TOOLBAR */
-#toolbar{position:fixed;top:18px;right:22px;display:flex;gap:8px;z-index:500;}
-.tb-btn{border:1px solid var(--border2);background:var(--surface);color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;padding:7px 13px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);}
-.tb-btn:hover{color:var(--green);border-color:var(--green);}
+#toolbar{position:fixed;top:18px;right:22px;display:flex;gap:8px;z-index:500;pointer-events:auto;}
+.tb-btn{border:1px solid var(--border2);background:var(--surface);color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.07em;padding:7px 13px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;}
+.tb-btn:hover,.tb-btn:active{color:var(--green);border-color:var(--green);}
+.tb-btn:active{transform:scale(.95);}
 
 /* SLIDES */
-#presentation{width:100vw;height:100vh;position:relative;}
+#presentation{width:100vw;height:100vh;position:relative;z-index:1;}
 .slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:4vh 6vw 6vh;opacity:0;pointer-events:none;transition:opacity .4s ease;overflow:hidden;}
 .slide.active{opacity:1;pointer-events:all;}
 
@@ -212,9 +213,55 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 @keyframes gb{0%,88%,100%{transform:none;opacity:0;}90%{transform:translateX(-3px);opacity:.6;}92%{transform:translateX(2px);opacity:.6;}94%{opacity:0;}}
 @keyframes ga{0%,89%,100%{transform:none;opacity:0;}91%{transform:translateX(3px);opacity:.5;}93%{transform:translateX(-2px);opacity:.5;}95%{opacity:0;}}
 
+/* LEGACY SLIDE */
+.legacy-slide{overflow-y:auto;}
+.legacy-question{margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.legacy-question .q-text{font-size:clamp(1.1rem,2.5vw,1.45rem);font-weight:300;line-height:1.45;font-family:'JetBrains Mono',monospace;}
+.legacy-question .q-attr{font-size:11px;color:var(--text-muted);margin-top:8px;letter-spacing:.04em;}
+.conviction-box{padding:14px 18px;background:var(--green-dim);border-left:3px solid var(--green);margin-bottom:18px;}
+.conviction-box .cv-label{font-size:10px;color:var(--green);letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:8px;}
+.conviction-box p{font-size:13px;color:var(--text-dim);line-height:1.65;}
+.conviction-box strong{color:var(--text);}
+.legacy-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;width:100%;}
+.legacy-card{border:1px solid var(--border2);padding:16px;background:var(--surface);box-shadow:var(--shadow);}
+.legacy-card .lc-num{font-size:10px;color:#0088ff;letter-spacing:.1em;margin-bottom:8px;font-weight:700;}
+.legacy-card h3{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--text);line-height:1.3;}
+.legacy-card p{font-size:11px;line-height:1.6;color:var(--text-dim);margin-bottom:10px;}
+.legacy-card strong{color:var(--text);}
+.legacy-card code{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);padding:8px 10px;line-height:1.5;white-space:pre;}
+.teaser-box{border:1px solid var(--border2);padding:16px;background:var(--surface);margin-bottom:16px;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.teaser-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),#ff6b35,var(--amber));background-size:200% 100%;animation:shimmer 3s linear infinite;}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+.teaser-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.teaser-badge{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);border:1px solid var(--amber);padding:2px 8px;white-space:nowrap;}
+.teaser-title{font-size:12px;color:var(--text);letter-spacing:.04em;font-weight:700;}
+.teaser-stack{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.stack-tag{font-size:10px;background:var(--bg);border:1px solid var(--border2);color:#0088ff;padding:2px 7px;}
+.teaser-desc{font-size:12px;line-height:1.65;color:var(--text-dim);margin-bottom:8px;}
+.teaser-eta{font-size:11px;color:var(--text-muted);}
+.teaser-eta strong{color:var(--amber);}
+.legacy-conclusion{border-top:1px solid var(--border);padding-top:14px;font-size:13px;line-height:1.7;color:var(--text-dim);text-align:center;}
+.legacy-conclusion strong{color:var(--text);}
+/* SLIDE MENU */
+#slide-menu{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#slide-menu.open{display:flex;}
+#slide-menu-inner{background:var(--surface);border:1px solid var(--border2);max-width:420px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);padding:0;}
+#slide-menu-inner .sm-title{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);padding:14px 18px 8px;border-bottom:1px solid var(--border);}
+.sm-item{display:flex;align-items:center;gap:12px;padding:10px 18px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-dim);text-decoration:none;}
+.sm-item:last-child{border-bottom:none;}
+.sm-item:hover{background:var(--green-dim);color:var(--text);}
+.sm-item.sm-active{color:var(--green);font-weight:700;}
+.sm-num{font-size:10px;color:var(--text-muted);min-width:20px;text-align:right;font-weight:700;}
+.sm-item.sm-active .sm-num{color:var(--green);}
+
+/* i18n class toggle — default lang is EN */
+.i18n-en{display:inline;}
+.i18n-fr{display:none;}
+
 @media(max-width:700px){
   /* Allow scrolling on content-heavy slides */
-  .slide{padding:3vh 5vw 8vh;justify-content:flex-start;padding-top:6vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .legacy-cards{grid-template-columns:1fr;}
+  .slide{padding:3vh 5vw 14vh;justify-content:flex-start;padding-top:6vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .slide.active{overflow-y:auto;}
 
   /* Typography */
@@ -304,9 +351,13 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 </head>
 <body class="light">
 <div id="scanlines"></div>
-<div id="toolbar">
-  <button class="tb-btn" id="lang-btn" onclick="toggleLang()">🌐 FR</button>
-  <button class="tb-btn" id="theme-btn" onclick="toggleTheme()">◐ Dark</button>
+<div id="toolbar" onclick="event.stopPropagation()">
+  <button class="tb-btn" id="menu-btn" onclick="event.stopPropagation();toggleMenu()">☰ Menu</button>
+  <button class="tb-btn" id="lang-btn" onclick="event.stopPropagation();toggleLang()">🌐 FR</button>
+  <button class="tb-btn" id="theme-btn" onclick="event.stopPropagation();toggleTheme()">◐ Dark</button>
+</div>
+<div id="slide-menu" onclick="if(event.target===this)toggleMenu()">
+  <div id="slide-menu-inner"></div>
 </div>
 
 <div id="presentation">
@@ -481,7 +532,94 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
     The differentiating skill is no longer <span class="hl">writing code</span>.<br>It is <span class="gr">writing context, the market fit and the tests</span> — and that is already what good tech leads do.</div>
 </div>
 
-<!-- 6 · TWO PIPELINES -->
+<!-- 6 · LEGACY & DATASPACE -->
+<div class="slide legacy-slide" id="s6">
+  <div class="prompt ai"><span class="i18n-fr">cat question.txt</span><span class="i18n-en">cat question.txt</span></div>
+  <div class="h-large ai" style="font-size:clamp(1.4rem,2.8vw,2rem)">
+    <span class="i18n-fr">Et le <span class="accent">legacy</span>&nbsp;?</span>
+    <span class="i18n-en">What about <span class="accent">legacy</span>?</span>
+  </div>
+
+  <div class="legacy-question ai">
+    <div class="q-text">
+      <span class="i18n-fr">C'est génial sur le greenfield, mais comment tu fais sur des codebases legacy avec +1M de lignes de code&nbsp;?&nbsp;🙂</span>
+      <span class="i18n-en">Great for greenfield, but what about legacy codebases with 1M+ lines of code?&nbsp;🙂</span>
+    </div>
+    <div class="q-attr">Daniel Jarjoura · Founder @ Runtime · CTO Whisperer</div>
+  </div>
+
+  <div class="conviction-box ai">
+    <div class="cv-label"><span class="i18n-fr">Ma conviction</span><span class="i18n-en">My conviction</span></div>
+    <p>
+      <span class="i18n-fr">Sur du legacy à fort drift, patcher à la marge est un piège. Les LLMs peuvent ingérer massivement le contexte existant — autant s'en servir pour <strong>repartir propre</strong>.</span>
+      <span class="i18n-en">On high-drift legacy code, incremental patching is a trap. LLMs can ingest massive context at once — so use that to <strong>start clean</strong>.</span>
+    </p>
+  </div>
+
+  <div class="legacy-cards ai">
+    <div class="legacy-card">
+      <div class="lc-num">01</div>
+      <h3><span class="i18n-fr">Retro-doc d'abord</span><span class="i18n-en">Retro-doc first</span></h3>
+      <p>
+        <span class="i18n-fr">L'agent lit l'intégralité des repos et produit ce qui n'a jamais été écrit : architecture réelle, invariants implicites, dette documentée, dépendances cachées. <strong>En quelques heures.</strong></span>
+        <span class="i18n-en">The agent reads all repos and produces what was never written: actual architecture, implicit invariants, documented debt, hidden dependencies. <strong>In hours.</strong></span>
+      </p>
+      <code>$ claude "document the real
+architecture of these repos.
+Be brutal about the debt."</code>
+    </div>
+    <div class="legacy-card">
+      <div class="lc-num">02</div>
+      <h3><span class="i18n-fr">PRD de migration</span><span class="i18n-en">Migration PRD</span></h3>
+      <p>
+        <span class="i18n-fr">À partir de la retro-doc : PRD de refonte aligné sur les standards actuels, réduction de dette, conformité by design. L'IA ne patche pas — elle <strong>spécifie la cible</strong>.</span>
+        <span class="i18n-en">From the retro-doc: a rewrite PRD aligned to current standards, debt reduction, compliance by design. The AI doesn't patch — it <strong>specifies the target</strong>.</span>
+      </p>
+      <code>INPUT  : retro-doc
+       + normative delta
+OUTPUT : greenfield PRD</code>
+    </div>
+    <div class="legacy-card">
+      <div class="lc-num">03</div>
+      <h3><span class="i18n-fr">Nouvelle base, savoir hérité</span><span class="i18n-en">New codebase, inherited knowledge</span></h3>
+      <p>
+        <span class="i18n-fr">On repart propre, avec tout le savoir métier capturé. L'IA porte la mémoire du legacy sans en hériter les cicatrices. Le drift est <strong>liquidé</strong>.</span>
+        <span class="i18n-en">Start clean, with all domain knowledge captured. The AI carries legacy memory without inheriting its scars. Drift is <strong>eliminated</strong>.</span>
+      </p>
+      <code>git init new-sovereign-stack
+# legacy knowledge → CLAUDE.md
+# legacy code → /dev/null</code>
+    </div>
+  </div>
+
+  <div class="teaser-box ai">
+    <div class="teaser-head">
+      <span class="teaser-badge"><span class="i18n-fr">en cours</span><span class="i18n-en">work in progress</span></span>
+      <span class="teaser-title"><span class="i18n-fr">Cas réel · Dataspace souverain</span><span class="i18n-en">Real case · Sovereign Dataspace</span></span>
+    </div>
+    <div class="teaser-stack">
+      <span class="stack-tag">Eclipse EDC / Connector</span>
+      <span class="stack-tag">multi-repos</span>
+      <span class="stack-tag"><span class="i18n-fr">microservices legacy</span><span class="i18n-en">legacy microservices</span></span>
+      <span class="stack-tag"><span class="i18n-fr">conformité réglementaire</span><span class="i18n-en">regulatory compliance</span></span>
+    </div>
+    <p class="teaser-desc">
+      <span class="i18n-fr">Retro-doc en cours sur plusieurs microservices Eclipse EDC. PRD de refonte en préparation. Nouvelle base cible : souveraine, conforme, testée. Le drift architectural amplifié, c'est exactement ce qu'on évite en repartant propre.</span>
+      <span class="i18n-en">Retro-doc in progress across several Eclipse EDC microservices. Rewrite PRD in preparation. Target stack: sovereign, compliant, tested. Amplified architectural drift is exactly what we're avoiding by starting clean.</span>
+    </p>
+    <div class="teaser-eta">
+      <span class="i18n-fr">Retex complet → <strong>Q2 2026</strong> · Ce slide sera mis à jour.</span>
+      <span class="i18n-en">Full retex → <strong>Q2 2026</strong> · This slide will be updated.</span>
+    </div>
+  </div>
+
+  <div class="legacy-conclusion ai">
+    <span class="i18n-fr">Le legacy n'est pas un obstacle à l'IA.<br>C'est la matière première d'une migration <strong>qu'on n'aurait jamais osé lancer avant.</strong></span>
+    <span class="i18n-en">Legacy isn't an obstacle to AI.<br>It's the raw material for a migration <strong>you'd never have dared to launch before.</strong></span>
+  </div>
+</div>
+
+<!-- 7 · TWO PIPELINES -->
 <div class="slide" id="s6">
   <div class="prompt ai" data-t='{"en":"diff claude-code.log open-code-sovereign.log","fr":"diff claude-code.log open-code-souverain.log"}'>diff claude-code.log open-code-sovereign.log</div>
   <div class="h-large ai" data-t='{"en":"Two pipelines. <span class=\"accent\">One conviction.</span>","fr":"Deux filières. <span class=\"accent\">Une conviction.</span>"}'>Two pipelines. <span class="accent">One conviction.</span></div>
@@ -703,8 +841,8 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 </div>
 
 <div id="progress-bar"></div>
-<div id="slide-counter"><em id="cur">01</em> / <span id="tot">13</span></div>
-<div id="nav-hint"><span class="key">←</span> <span class="key">→</span> navigate · <span class="key">F</span> fullscreen</div>
+<div id="slide-counter"><em id="cur">01</em> / <span id="tot">14</span></div>
+<div id="nav-hint"><span class="key">←</span> <span class="key">→</span> navigate · <span class="key">M</span> menu · <span class="key">F</span> fullscreen</div>
 
 <script>
 // ── State — declared first so every function below can close over them ──
@@ -778,23 +916,52 @@ const slides=document.querySelectorAll('.slide');
 const tot=slides.length;
 document.getElementById('tot').textContent=String(tot).padStart(2,'0');
 
+// Slide titles for menu
+const slideTitles={
+  en:['Title','GitHub Heatmap','Inflection Point','Three Projects','Four Phases','Context Engineering','Legacy & Dataspace','Two Pipelines','Learnings','Open Questions','Perspectives','Resolution','Your Turn','Glossary'],
+  fr:['Titre','Heatmap GitHub','Point d\'inflexion','Trois projets','Quatre phases','Context Engineering','Legacy & Dataspace','Deux filières','Apprentissages','Questions ouvertes','Perspectives','Résolution','À vous','Glossaire']
+};
+
 function goTo(n){
   slides[cur].classList.remove('active');
   cur=Math.max(0,Math.min(n,tot-1));
   slides[cur].classList.add('active');
   document.getElementById('cur').textContent=String(cur+1).padStart(2,'0');
   document.getElementById('progress-bar').style.width=((cur+1)/tot*100)+'%';
+  history.replaceState(null,null,'#'+(cur+1));
 }
 
+// Menu
+function toggleMenu(){
+  const m=document.getElementById('slide-menu');
+  const open=m.classList.toggle('open');
+  if(open) buildMenu();
+}
+function buildMenu(){
+  const inner=document.getElementById('slide-menu-inner');
+  const titles=slideTitles[lang]||slideTitles.en;
+  inner.innerHTML='<div class="sm-title">Slides</div>'+
+    titles.map((t,i)=>'<a class="sm-item'+(i===cur?' sm-active':'')+'" href="#'+(i+1)+'" onclick="event.preventDefault();goTo('+i+');toggleMenu()"><span class="sm-num">'+String(i+1).padStart(2,'0')+'</span>'+t+'</a>').join('');
+}
+
+// Hash navigation
+function readHash(){
+  const h=parseInt(location.hash.replace('#',''),10);
+  if(h>=1&&h<=tot) goTo(h-1);
+}
+window.addEventListener('hashchange',readHash);
+
 document.addEventListener('keydown',e=>{
+  if(document.getElementById('slide-menu').classList.contains('open')){if(e.key==='Escape')toggleMenu();return;}
   if(['ArrowRight','ArrowDown',' '].includes(e.key)){e.preventDefault();goTo(cur+1);}
   if(['ArrowLeft','ArrowUp'].includes(e.key)){e.preventDefault();goTo(cur-1);}
   if(e.key==='f'||e.key==='F') document.documentElement.requestFullscreen?.();
+  if(e.key==='m'||e.key==='M') toggleMenu();
 });
 let tx=0;
-document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
-document.addEventListener('touchend',e=>{const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)goTo(cur+(d>0?1:-1));});
-document.addEventListener('click',e=>{if(window.innerWidth<=700) return;if(e.target.closest('a,.tb-btn,.tl-step,#phase-detail')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
+document.addEventListener('touchstart',e=>{if(e.target.closest('#toolbar,#slide-menu')) return;tx=e.touches[0].clientX;});
+document.addEventListener('touchend',e=>{if(e.target.closest('#toolbar,#slide-menu')) return;const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)goTo(cur+(d>0?1:-1));});
+document.addEventListener('click',e=>{if(window.innerWidth<=700) return;if(e.target.closest('a,.tb-btn,#toolbar,.tl-step,#phase-detail,#slide-menu')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
 
 function toggleTheme(){
   theme=theme==='light'?'dark':'light';
@@ -819,6 +986,9 @@ function applyLang(){
   const da1=document.getElementById('da1'),db1=document.getElementById('db1');
   if(da1)da1.textContent=lang==='en'?'3 months':'3 mois';
   if(db1)db1.textContent=lang==='en'?'3 months':'3 mois';
+  // Toggle .i18n-en / .i18n-fr visibility
+  document.querySelectorAll('.i18n-en').forEach(el=>el.style.display=lang==='en'?'inline':'none');
+  document.querySelectorAll('.i18n-fr').forEach(el=>el.style.display=lang==='fr'?'inline':'none');
 }
 
 // ── Heatmap ──
@@ -857,7 +1027,7 @@ function buildHeatmap(){
 
 buildHeatmap();
 showPhaseDetail(0);
-goTo(0);
+if(location.hash) readHash(); else goTo(0);
 </script>
 </body>
 </html>
