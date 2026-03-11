@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>last-line.dev</title>
+<title>last-line.dev — I wrote my last line of code in December 2025</title>
+<meta name="description" content="How I became a developer again while remaining CEO of a 200-person company. A personal feedback on context engineering and AI-assisted development. No filter.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<!-- Open Graph / WhatsApp / Social -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://last-line.dev/">
+<meta property="og:title" content="last-line.dev — I wrote my last line of code in December 2025">
+<meta property="og:description" content="How I became a developer again while remaining CEO of a 200-person company. A personal feedback on context engineering and AI-assisted development.">
+<meta property="og:image" content="https://last-line.dev/assets/og-image.png">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="438">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="last-line.dev — I wrote my last line of code in December 2025">
+<meta name="twitter:description" content="How I became a developer again while remaining CEO of a 200-person company. Context engineering & AI-assisted development.">
+<meta name="twitter:image" content="https://last-line.dev/assets/og-image.png">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,200;0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 :root{--transition:0.35s ease;}
@@ -49,7 +64,8 @@ body.dark #progress-bar{box-shadow:0 0 6px var(--green);}
 #slide-counter{position:fixed;bottom:18px;right:22px;font-size:11px;color:var(--text-muted);letter-spacing:.1em;z-index:200;}
 #slide-counter em{color:var(--green);font-style:normal;}
 #nav-hint{position:fixed;bottom:18px;left:22px;font-size:11px;color:var(--text-muted);z-index:200;}
-.key{display:inline-block;border:1px solid var(--border2);padding:1px 6px;font-size:10px;color:var(--text-dim);background:var(--surface);border-radius:2px;}
+.key{display:inline-block;border:1px solid var(--border2);padding:1px 6px;font-size:10px;color:var(--text-dim);background:var(--surface);border-radius:2px;cursor:pointer;transition:all .2s;user-select:none;}
+.key:hover{color:var(--green);border-color:var(--green);}
 
 /* TYPOGRAPHY */
 .prompt{font-size:12px;color:var(--text-muted);letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
@@ -351,10 +367,10 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
 </head>
 <body class="light">
 <div id="scanlines"></div>
-<div id="toolbar" onclick="event.stopPropagation()">
-  <button class="tb-btn" id="menu-btn" onclick="event.stopPropagation();toggleMenu()">☰ Menu</button>
-  <button class="tb-btn" id="lang-btn" onclick="event.stopPropagation();toggleLang()">🌐 FR</button>
-  <button class="tb-btn" id="theme-btn" onclick="event.stopPropagation();toggleTheme()">◐ Dark</button>
+<div id="toolbar">
+  <button class="tb-btn" id="menu-btn">☰ Menu</button>
+  <button class="tb-btn" id="lang-btn">🌐 FR</button>
+  <button class="tb-btn" id="theme-btn">◐ Dark</button>
 </div>
 <div id="slide-menu" onclick="if(event.target===this)toggleMenu()">
   <div id="slide-menu-inner"></div>
@@ -545,7 +561,7 @@ body.dark .hm-cell.l4{box-shadow:0 0 3px rgba(0,255,136,.4);}
       <span class="i18n-fr">C'est génial sur le greenfield, mais comment tu fais sur des codebases legacy avec +1M de lignes de code&nbsp;?&nbsp;🙂</span>
       <span class="i18n-en">Great for greenfield, but what about legacy codebases with 1M+ lines of code?&nbsp;🙂</span>
     </div>
-    <div class="q-attr">Daniel Jarjoura · Founder @ Runtime · CTO Whisperer</div>
+    <div class="q-attr">Daniel Jarjoura</div>
   </div>
 
   <div class="conviction-box ai">
@@ -842,7 +858,7 @@ OUTPUT : greenfield PRD</code>
 
 <div id="progress-bar"></div>
 <div id="slide-counter"><em id="cur">01</em> / <span id="tot">14</span></div>
-<div id="nav-hint"><span class="key">←</span> <span class="key">→</span> navigate · <span class="key">M</span> menu · <span class="key">F</span> fullscreen</div>
+<div id="nav-hint"><span class="key" onclick="event.stopPropagation();goTo(cur-1)">←</span> <span class="key" onclick="event.stopPropagation();goTo(cur+1)">→</span> navigate · <span class="key" onclick="event.stopPropagation();toggleMenu()">M</span> menu · <span class="key" onclick="event.stopPropagation();document.documentElement.requestFullscreen?.()">F</span> fullscreen</div>
 
 <script>
 // ── State — declared first so every function below can close over them ──
@@ -961,7 +977,7 @@ document.addEventListener('keydown',e=>{
 let tx=0;
 document.addEventListener('touchstart',e=>{if(e.target.closest('#toolbar,#slide-menu')) return;tx=e.touches[0].clientX;});
 document.addEventListener('touchend',e=>{if(e.target.closest('#toolbar,#slide-menu')) return;const d=tx-e.changedTouches[0].clientX;if(Math.abs(d)>50)goTo(cur+(d>0?1:-1));});
-document.addEventListener('click',e=>{if(window.innerWidth<=700) return;if(e.target.closest('a,.tb-btn,#toolbar,.tl-step,#phase-detail,#slide-menu')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
+document.addEventListener('click',e=>{if(window.innerWidth<=700) return;if(e.target.closest('a,.tb-btn,#toolbar,.tl-step,#phase-detail,#slide-menu,#nav-hint,.key')) return;goTo(cur+(e.clientX>window.innerWidth*.25?1:-1));});
 
 function toggleTheme(){
   theme=theme==='light'?'dark':'light';
@@ -1028,6 +1044,11 @@ function buildHeatmap(){
 buildHeatmap();
 showPhaseDetail(0);
 if(location.hash) readHash(); else goTo(0);
+
+// Toolbar buttons — capture phase to guarantee they fire before any other click handler
+document.getElementById('menu-btn').addEventListener('click',e=>{e.stopImmediatePropagation();toggleMenu();},true);
+document.getElementById('lang-btn').addEventListener('click',e=>{e.stopImmediatePropagation();toggleLang();},true);
+document.getElementById('theme-btn').addEventListener('click',e=>{e.stopImmediatePropagation();toggleTheme();},true);
 </script>
 </body>
 </html>
